@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="4dp" />
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_weight="1"
+        android:layout_width="match_parent"
+        android:layout_height="1dp">
+
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/hour_vertical_view1"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/hour_vertical_view2"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/hour_vertical_view3"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/hour_vertical_view4"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/hour_vertical_view5"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/hour_vertical_view6"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="4dp" />
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_weight="1"
+        android:layout_width="match_parent"
+        android:layout_height="1dp">
+
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/day_vertical_view1"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/day_vertical_view2"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/day_vertical_view3"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/day_vertical_view4"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/day_vertical_view5"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+        <com.heweather.plugin.view.VerticalView
+            android:id="@+id/day_vertical_view6"
+            android:layout_weight="1"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"/>
+
+
+    </LinearLayout>
+
+</LinearLayout>

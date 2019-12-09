@@ -17,6 +17,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    sourceSets {
+        main {
+            res.srcDirs = [
+                    'src/main/res/layout/weatherLayout',
+                    'src/main/res/layout',
+                    'src/main/res'
+            ]
+        }
+    }
+
 }
 
 dependencies {
@@ -27,9 +38,13 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation files('libs/HeWeather_Public_Android_V3.1.jar')
-
-    implementation("com.squareup.okhttp3:okhttp:4.2.2")
+    implementation 'com.squareup.okhttp3:okhttp:4.2.2'
     implementation 'com.google.code.gson:gson:2.8.6'
-
     implementation 'com.google.android.material:material:1.1.0-alpha10'
+    implementation 'com.baoyz.pullrefreshlayout:library:1.2.0'
+    implementation files('libs/HeWeather_Plugin_SDK_Android_V1.2.jar')
+    implementation files('libs/Android_Map3D_SDK_V7.1.0_20191030.jar')
+    implementation files('libs/AMap_Search_V7.1.0_20191030.jar')
+    implementation files('libs/AMap_Location_V4.7.2_20190927.jar')
+    implementation 'org.litepal.android:java:3.0.0'
 }

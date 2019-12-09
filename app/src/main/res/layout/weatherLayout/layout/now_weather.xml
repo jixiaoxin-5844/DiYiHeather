@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- 显示当前气温和天气状况-->
+
+    <TextView
+        android:id="@+id/now_tem"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:textColor="#fff"
+        android:textSize="60sp"
+        android:layout_marginRight="20dp"/>
+
+    <TextView
+        android:id="@+id/now_weather"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:textColor="#fff"
+        android:textSize="36sp"
+        android:layout_marginRight="20dp"/>
+
+    <TextView
+        android:id="@+id/now_updateTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginRight="20dp"
+        android:textSize="12sp"/>
+
+
+</LinearLayout>
