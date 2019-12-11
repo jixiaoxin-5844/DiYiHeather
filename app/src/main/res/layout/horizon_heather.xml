@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="4dp" />
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_weight="3">
+
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/air_quality_horizon_view1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/air_quality_horizon_view2"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/air_quality_horizon_view3"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="1dp" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="4dp" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_weight="4">
+
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/information_horizon_view1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/information_horizon_view2"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="1dp" />
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/information_horizon_view3"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="1dp" />
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/information_horizon_view4"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="1dp" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="4dp" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_weight="4">
+
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/livehorizon_view1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/live_horizon_view2"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/livehorizon_view3"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+        <com.heweather.plugin.view.HorizonView
+            android:id="@+id/live_horizon_view4"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+
+</LinearLayout>

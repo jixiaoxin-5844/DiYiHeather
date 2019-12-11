@@ -6,13 +6,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MVPActivity.setTingActivity">
+    tools:context=".MVPActivity.Test_UI_Activity">
 
 
-     <androidx.appcompat.widget.Toolbar
-         android:id="@+id/setting_toolbar"
-         android:layout_width="match_parent"
-         android:layout_height="?attr/actionBarSize"
-         app:subtitle="设置"/>
 
 </LinearLayout>
