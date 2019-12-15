@@ -55,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
 
     // View 组件创建
 
-    private ScrollView weatherLayout;
     private TextView now_temText,now_weather,now_updateTime;
     private LinearLayout forecastLayout;
 
@@ -87,25 +86,11 @@ public class MainActivity extends AppCompatActivity {
         //应用 Toolbar标题栏
         setSupportActionBar(toolbar);
 
-        //初始化定位
-        mLocationClient = new AMapLocationClient(getApplicationContext());
-
-        // 声明AMapLocationClientOption对象 并初始化
-        AMapLocationClientOption mLocationOption = new AMapLocationClientOption();
-        //获取一次定位结果： 该方法默认为false。
-        mLocationOption.setOnceLocation(true);
-        //给定位客户端对象设置定位参数
-        mLocationClient.setLocationOption(mLocationOption);
-        // 设置监听
-        mLocationClient.setLocationListener(new MyLocationListener());
-
-
-        //启动定位
-        mLocationClient.startLocation();
+        initLocation();
 
         // *************************  初始化操作 -> *****************
 
-        // 动态申请定位权限 和存储卡权限，用于缓存数据
+       /* // 动态申请定位权限 和存储卡权限，用于缓存数据
         // 判断是否有定位权限
         if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)
         != PackageManager.PERMISSION_GRANTED){
@@ -116,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
 
             // 一进来 ，应该调用获取位置的方法，并设置显示相关天气信息
             Toast.makeText(MainActivity.this,"进入",Toast.LENGTH_SHORT).show();
-        }
+        }*/
 
 
         //   swipeRefreshLayout 下拉刷新事件 (获取最新天气)
@@ -132,6 +117,24 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+    }
+
+    public void initLocation(){
+        //初始化定位
+        mLocationClient = new AMapLocationClient(getApplicationContext());
+
+        // 声明AMapLocationClientOption对象 并初始化
+        AMapLocationClientOption mLocationOption = new AMapLocationClientOption();
+        //获取一次定位结果： 该方法默认为false。
+        mLocationOption.setOnceLocation(true);
+        //给定位客户端对象设置定位参数
+        mLocationClient.setLocationOption(mLocationOption);
+        // 设置监听
+        mLocationClient.setLocationListener(new MyLocationListener());
+
+        //启动定位
+        mLocationClient.startLocation();
 
     }
 
@@ -174,14 +177,11 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout = findViewById(R.id.main_swipe_refresh);
        // llView = findViewById(R.id.main_ll_view); //左侧大布局右侧双布局控件
         // 天气控件初始化
-        weatherLayout = findViewById(R.id.main_weather_layout);  // 滑动布局
-
         now_temText = findViewById(R.id.now_tem);                //当前气温
         now_weather = findViewById(R.id.now_weather);            // 当前天气等级
         now_updateTime = findViewById(R.id.now_updateTime);
 
         forecastLayout = findViewById(R.id.forever_layout);      // 未来天气预报 LinearLayout
-
         // aqi    // pm2.5
         aqiText = findViewById(R.id.aqi_text);
         pm25Text = findViewById(R.id.pm25_text);
@@ -234,6 +234,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
     // 授予或拒绝授予权限后都会回调这个方法
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -430,6 +431,20 @@ public class MainActivity extends AppCompatActivity {
                   new_CityName = aMapLocation.getCity();
 
                 } else {
+                    // 动态申请定位权限 和存储卡权限，用于缓存数据
+                    // 判断是否有定位权限
+                    if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED ||  ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                            != PackageManager.PERMISSION_GRANTED){
+                        ActivityCompat.requestPermissions(MainActivity.this,new String[]{
+                                Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.READ_EXTERNAL_STORAGE
+                        },1);
+                    }else {
+
+                        // 一进来 ，应该调用获取位置的方法，并设置显示相关天气信息
+                        Toast.makeText(MainActivity.this,"进入",Toast.LENGTH_SHORT).show();
+                    }
+
                     //定位失败时，可通过ErrCode（错误码）信息来确定失败的原因，errInfo是错误信息，详见错误码表。
                     Log.e("AmapError", "location Error, ErrCode:"
                             + aMapLocation.getErrorCode() + ", errInfo:"

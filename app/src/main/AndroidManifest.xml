@@ -22,8 +22,6 @@
         android:theme="@style/AppTheme">
         <activity android:name=".MVPActivity.for_Activity.test_CityPicker_Activity"
             android:theme="@style/DefaultCityPickerTheme"></activity>
-        <activity android:name=".MVPActivity.ChooseCityActivity" />
-        <activity android:name=".MVPActivity.WeatherActivity" />
 
         <meta-data
             android:name="com.amap.api.v2.apikey"
