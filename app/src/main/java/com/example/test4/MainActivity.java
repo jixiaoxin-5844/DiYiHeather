@@ -15,7 +15,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,8 +29,8 @@ import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
 import com.example.test4.MVPActivity.for_Activity.test_CityPicker_Activity;
 import com.example.test4.MVPActivity.setTingActivity;
-import com.example.test4.bean.SaveLocation;
-import com.example.test4.presenter.CityCallBack;
+import com.example.test4.presenter.WeatherImpl;
+import com.example.test4.presenter.WeatherInterface;
 import com.google.gson.Gson;
 import com.heweather.plugin.view.HeWeatherConfig;
 
@@ -51,7 +50,7 @@ import interfaces.heweather.com.interfacesmodule.bean.weather.now.NowBase;
 import interfaces.heweather.com.interfacesmodule.view.HeConfig;
 import interfaces.heweather.com.interfacesmodule.view.HeWeather;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements WeatherInterface {
 
     // View 组件创建
 
@@ -88,6 +87,13 @@ public class MainActivity extends AppCompatActivity {
 
         initLocation();
 
+        // 和风初始化
+        HeWeatherConfig.init("e45535cfafe946518d2762ffc980297a");
+        // 账户初始化
+        HeConfig.init("HE1912101541351848", "e45535cfafe946518d2762ffc980297a");
+        //切换到免费服务域名
+        HeConfig.switchToFreeServerNode();
+
         // *************************  初始化操作 -> *****************
 
        /* // 动态申请定位权限 和存储卡权限，用于缓存数据
@@ -110,7 +116,8 @@ public class MainActivity extends AppCompatActivity {
             public void onRefresh() {
                 //这里获取数据的逻辑
                 // 更新数据
-                getHeather();
+               // getHeather();
+                initData(new_CityName);
 
                 // 设置它的停止
                 swipeRefreshLayout.setRefreshing(false);
@@ -138,125 +145,15 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void getHeather(){
-            //（1）初始化用户的key和location
-            HeWeatherConfig.init("e45535cfafe946518d2762ffc980297a");
-            // 账户初始化
-            HeConfig.init("HE1912101541351848", "e45535cfafe946518d2762ffc980297a");
-            //切换到免费服务域名
-            HeConfig.switchToFreeServerNode();
-            // 未来小时天气
-            getHourly(new_CityName);
-            //   实时天气 WeatherNow
-            getWeatherNow(new_CityName);
-            // 空气质量 AirNow
-            getAirNow(new_CityName);
-            // 生活指数 Lifestyle
-            getLifestyle(new_CityName);
-    }
+    // 获取数据
+    private void initData(String cityName){
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        //获取数据
-    }
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        //关闭定位
-        if (mLocationClient != null) {
-            mLocationClient.stopLocation();
-            mLocationClient.onDestroy();
-        }
-    }
+        WeatherImpl weather = new WeatherImpl(this,this);
+        weather.getAirNow(cityName);
+        weather.getLifestyle(cityName);
+        weather.getWeatherNow(cityName);
+        weather.getWeatherHourly(cityName);
 
-    // 初始化 布局组件
-    public void initView(){
-
-        toolbar = findViewById(R.id.main_toolbar);
-        swipeRefreshLayout = findViewById(R.id.main_swipe_refresh);
-       // llView = findViewById(R.id.main_ll_view); //左侧大布局右侧双布局控件
-        // 天气控件初始化
-        now_temText = findViewById(R.id.now_tem);                //当前气温
-        now_weather = findViewById(R.id.now_weather);            // 当前天气等级
-        now_updateTime = findViewById(R.id.now_updateTime);
-
-        forecastLayout = findViewById(R.id.forever_layout);      // 未来天气预报 LinearLayout
-        // aqi    // pm2.5
-        aqiText = findViewById(R.id.aqi_text);
-        pm25Text = findViewById(R.id.pm25_text);
-        // 生活建议  舒适度  洗车   运动建议
-        comfortText = findViewById(R.id.comfort_text);
-        carWashText = findViewById(R.id.car_wash_text);
-        sportText = findViewById(R.id.sport_text);
-
-    }
-
-    // 初始化 toolbar  显示 按钮
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.toolbar,menu);
-        return true;
-    }
-    // 设置 Toolbar上控件的点击事件
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-
-        switch (item.getItemId()){
-            // 点击城市按钮   进行切换城市 界面    **********************
-            case R.id.main_toolbar_city:
-                startActivityForResult(new Intent(MainActivity.this, test_CityPicker_Activity.class),123);
-                break;
-                // 点击设置页面 跳转到 setTingActivity
-            case R.id.main_toolbar_start_setting:
-                Intent intent = new Intent(MainActivity.this, setTingActivity.class);
-                startActivity(intent);
-                break;
-                default:
-                    break;
-        }
-        return true;
-    }
-
-    // 拿城市选择页面传回来的城市名  // 后续要将其保存到文件里
-    // 同时设置页面里设置自己选择城市 还是通过定位决定获取哪个城市的天气
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == 123){
-            // 获取传回来的城市名
-            //防止没有选择城市
-            try {
-                choose_cityName = data.getStringExtra("choose_city");
-                Toast.makeText(MainActivity.this,"选择的城市："+choose_cityName+"aaaaaaaa",Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    // 授予或拒绝授予权限后都会回调这个方法
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode){
-            case 1:
-                if(grantResults.length >0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
-                && grantResults[1]==PackageManager.PERMISSION_GRANTED){
-                    Toast.makeText(MainActivity.this,"欢迎",Toast.LENGTH_SHORT).show();
-                }else {
-                    Toast.makeText(MainActivity.this,"需要获取权限才能正常使用",Toast.LENGTH_SHORT).show();
-                    finish();
-                }
-                break;
-
-                default:
-                    break;
-
-        }
-    }
-    // 悬浮按钮点击事件
-    public void floatingButtonClick(View view){
-        Toast.makeText(this,"aaaaa",Toast.LENGTH_SHORT).show();
     }
 
     //     ********************* <-   获取和风数据  **************************
@@ -304,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
         HeWeather.getWeatherHourly(MainActivity.this, cityName, new HeWeather.OnResultWeatherHourlyBeanListener() {
             @Override
             public void onError(Throwable throwable) {
-                    Log.i("", "Weather Hourly onError: ", throwable);
+                Log.i("", "Weather Hourly onError: ", throwable);
             }
 
             @Override
@@ -416,7 +313,252 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    //    *** *************** <-   获取和风数据     **************************
+
+    @Override
+    public void getWeatherNow(Now bean) {
+
+        if ( Code.OK.getCode().equalsIgnoreCase(bean.getStatus()) ){
+            //此时返回数据
+            NowBase now = bean.getNow();
+            Basic basic = bean.getBasic();
+            Update update = bean.getUpdate();
+
+            //更新数据时间
+            now_updateTime.setText(update.getLoc());
+            // 定位城市
+            toolbar.setSubtitle(basic.getLocation());
+
+            // 获取温度
+            now_temText.setText(now.getTmp()+ "℃");
+            now_weather.setText(now.getCond_txt());
+
+        } else {
+            //在此查看返回数据失败的原因
+            String status = bean.getStatus();
+            Code code = Code.toEnum(status);
+            Log.i("TAG", "failed code: " + code);
+        }
+
+    }
+
+    @Override
+    public void getAirNow(AirNow bean) {
+
+        if(Code.OK.getCode().equalsIgnoreCase(bean.getStatus())){
+            AirNowCity air_now_city = bean.getAir_now_city();
+
+            aqiText.setText(air_now_city.getAqi());
+            pm25Text.setText(air_now_city.getPm25());
+        }else {
+            String status = bean.getStatus();
+            Code code = Code.toEnum(status);
+            Log.i("TAG", "failed code: " + code);
+        }
+    }
+
+    @Override
+    public void getWeatherHourly(Hourly bean) {
+
+        if(Code.OK.getCode().equalsIgnoreCase(bean.getStatus())){
+            List<HourlyBase> hourly1 = bean.getHourly();
+
+            forecastLayout.removeAllViews();
+
+            for (int i = 0; i < 8; i++) {
+                HourlyBase hourlyBase = hourly1.get(i);
+
+                View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.forecast_item,forecastLayout,false);
+
+                TextView dateText = view.findViewById(R.id.forecast_item_date_text);
+                TextView infoText = view.findViewById(R.id.forecast_item_info_text);
+                TextView maxText = view.findViewById(R.id.forecast_item_max_text);
+                TextView minText = view.findViewById(R.id.forecast_item_min_text);
+
+                dateText.setText(hourlyBase.getTime());
+                infoText.setText(hourlyBase.getCond_txt());
+                // 相对湿度
+                maxText.setText(hourlyBase.getHum());
+                // 降水概率
+                minText.setText(hourlyBase.getPop());
+
+                forecastLayout.addView(view);
+
+            }
+
+        } else {
+            //在此查看返回数据失败的原因
+            String status = bean.getStatus();
+            Code code = Code.toEnum(status);
+            Log.i("TAG", "failed code: " + code);
+        }
+
+    }
+
+    @Override
+    public void getLifestyle(Lifestyle lifestyle) {
+
+        if(Code.OK.getCode().equalsIgnoreCase(lifestyle.getStatus())){
+
+            // comf舒适度     cw洗车     sport运动
+
+            // LifestyleBean 逐小时天气	List<Lifestyle>
+
+            List<LifestyleBase> lifestyle1 = lifestyle.getLifestyle();
+            LifestyleBase lifestyleBase = lifestyle1.get(0);
+            Basic basic = lifestyle.getBasic();
+            //生活指数详细描述
+            String txt = lifestyleBase.getTxt();
+            comfortText.setText(txt);
+            carWashText.setText("经度:"+ basic.getLon());
+            sportText.setText("纬度:"+ basic.getLat());
+
+        }else {
+            String status = lifestyle.getStatus();
+            Code code = Code.toEnum(status);
+            Log.i("TAG", "failed code: " + code);
+        }
+
+
+    }
+
     //     *********************    获取和风数据  -> **************************
+
+    public void getHeather(){
+            //（1）初始化用户的key和location
+            HeWeatherConfig.init("e45535cfafe946518d2762ffc980297a");
+            // 账户初始化
+            HeConfig.init("HE1912101541351848", "e45535cfafe946518d2762ffc980297a");
+            //切换到免费服务域名
+            HeConfig.switchToFreeServerNode();
+            // 未来小时天气
+            getHourly(new_CityName);
+            //   实时天气 WeatherNow
+            getWeatherNow(new_CityName);
+            // 空气质量 AirNow
+            getAirNow(new_CityName);
+            // 生活指数 Lifestyle
+            getLifestyle(new_CityName);
+    }
+
+
+
+
+    // 设置标题为空
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        toolbar.setTitle("");
+    }
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        //获取数据
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //关闭定位
+        if (mLocationClient != null) {
+            mLocationClient.stopLocation();
+            mLocationClient.onDestroy();
+        }
+    }
+
+    // 初始化 布局组件
+    public void initView(){
+
+        toolbar = findViewById(R.id.main_toolbar);
+        swipeRefreshLayout = findViewById(R.id.main_swipe_refresh);
+       // llView = findViewById(R.id.main_ll_view); //左侧大布局右侧双布局控件
+        // 天气控件初始化
+        now_temText = findViewById(R.id.now_tem);                //当前气温
+        now_weather = findViewById(R.id.now_weather);            // 当前天气等级
+        now_updateTime = findViewById(R.id.now_updateTime);
+
+        forecastLayout = findViewById(R.id.forever_layout);      // 未来天气预报 LinearLayout
+        // aqi    // pm2.5
+        aqiText = findViewById(R.id.aqi_text);
+        pm25Text = findViewById(R.id.pm25_text);
+        // 生活建议  舒适度  洗车   运动建议
+        comfortText = findViewById(R.id.comfort_text);
+        carWashText = findViewById(R.id.car_wash_text);
+        sportText = findViewById(R.id.sport_text);
+
+    }
+
+    // 初始化 toolbar  显示 按钮
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.toolbar,menu);
+        return true;
+    }
+    // 设置 Toolbar上控件的点击事件
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
+        switch (item.getItemId()){
+            // 点击城市按钮   进行切换城市 界面    **********************
+            case R.id.main_toolbar_city:
+                startActivityForResult(new Intent(MainActivity.this, test_CityPicker_Activity.class),123);
+                break;
+                // 点击设置页面 跳转到 setTingActivity
+            case R.id.main_toolbar_start_setting:
+                Intent intent = new Intent(MainActivity.this, setTingActivity.class);
+                startActivity(intent);
+                break;
+                default:
+                    break;
+        }
+        return true;
+    }
+
+    // 拿城市选择页面传回来的城市名  // 后续要将其保存到文件里
+    // 同时设置页面里设置自己选择城市 还是通过定位决定获取哪个城市的天气
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == 123){
+            // 获取传回来的城市名
+            //防止没有选择城市
+            try {
+                choose_cityName = data.getStringExtra("choose_city");
+                Toast.makeText(MainActivity.this,"选择的城市："+choose_cityName+"aaaaaaaa",Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // 授予或拒绝授予权限后都会回调这个方法
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode){
+            case 1:
+                if(grantResults.length >0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                && grantResults[1]==PackageManager.PERMISSION_GRANTED){
+                    Toast.makeText(MainActivity.this,"欢迎",Toast.LENGTH_SHORT).show();
+                }else {
+                    Toast.makeText(MainActivity.this,"需要获取权限才能正常使用",Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+                break;
+
+                default:
+                    break;
+
+        }
+    }
+    // 悬浮按钮点击事件
+    public void floatingButtonClick(View view){
+        Toast.makeText(this,"aaaaa",Toast.LENGTH_SHORT).show();
+    }
+
+
+
+
 
 
     public class  MyLocationListener implements AMapLocationListener {

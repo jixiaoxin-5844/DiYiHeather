@@ -5,9 +5,7 @@
     <version value="1"/>
 
     <list>
-        <mapping class="com.example.test4.bean.Pvovince"/>
-        <mapping class="com.example.test4.bean.City"/>
-        <mapping class="com.example.test4.bean.County"/>
+
     </list>
 
 </litepal>
