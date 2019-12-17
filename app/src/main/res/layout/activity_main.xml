@@ -57,13 +57,4 @@
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 
-        <!--悬浮按钮-->
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:layout_gravity="bottom|end"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:src="@drawable/less1"
-            android:onClick="floatingButtonClick" />
-
 </LinearLayout>

@@ -29,10 +29,15 @@ import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
 import com.example.test4.MVPActivity.for_Activity.test_CityPicker_Activity;
 import com.example.test4.MVPActivity.setTingActivity;
+import com.example.test4.bean.sqliteBean.HourlyBaseCache;
+import com.example.test4.bean.sqliteBean.NowCityName;
+import com.example.test4.bean.sqliteBean.WeatherCache;
 import com.example.test4.presenter.WeatherImpl;
 import com.example.test4.presenter.WeatherInterface;
 import com.google.gson.Gson;
 import com.heweather.plugin.view.HeWeatherConfig;
+
+import org.litepal.LitePal;
 
 import java.util.List;
 
@@ -70,10 +75,12 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
     //选择页面传回来的城市名
     String choose_cityName;
     // 定位城市
-    public String new_CityName = "2";
+    public String new_CityName = "北京";
     //当前选择城市
     String now_CityName;
 
+    // 声名数据库的 天气实时信息 JavaBean 类
+    WeatherCache weatherCache = new WeatherCache();
 
     // *************    onCreate  ****************** *******************************************
     @Override
@@ -84,41 +91,20 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         initView();
         //应用 Toolbar标题栏
         setSupportActionBar(toolbar);
-
+        //获取定位
         initLocation();
-
-        // 和风初始化
-        HeWeatherConfig.init("e45535cfafe946518d2762ffc980297a");
-        // 账户初始化
-        HeConfig.init("HE1912101541351848", "e45535cfafe946518d2762ffc980297a");
-        //切换到免费服务域名
-        HeConfig.switchToFreeServerNode();
-
-        // *************************  初始化操作 -> *****************
-
-       /* // 动态申请定位权限 和存储卡权限，用于缓存数据
-        // 判断是否有定位权限
-        if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)
-        != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(MainActivity.this,new String[]{
-                    Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.READ_EXTERNAL_STORAGE
-            },1);
-        }else {
-
-            // 一进来 ，应该调用获取位置的方法，并设置显示相关天气信息
-            Toast.makeText(MainActivity.this,"进入",Toast.LENGTH_SHORT).show();
-        }*/
+        //加载并显示缓存数据
+        getCacheAndShowData();
 
 
         //   swipeRefreshLayout 下拉刷新事件 (获取最新天气)
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                //这里获取数据的逻辑
+                //删除数据
+                deleteAllCache();
                 // 更新数据
-               // getHeather();
                 initData(new_CityName);
-
                 // 设置它的停止
                 swipeRefreshLayout.setRefreshing(false);
 
@@ -147,171 +133,22 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     // 获取数据
     private void initData(String cityName){
-
+        // 和风初始化
+        HeWeatherConfig.init("e45535cfafe946518d2762ffc980297a");
+        // 账户初始化
+        HeConfig.init("HE1912101541351848", "e45535cfafe946518d2762ffc980297a");
+        //切换到免费服务域名
+        HeConfig.switchToFreeServerNode();
         WeatherImpl weather = new WeatherImpl(this,this);
         weather.getAirNow(cityName);
         weather.getLifestyle(cityName);
         weather.getWeatherNow(cityName);
         weather.getWeatherHourly(cityName);
-
     }
 
     //     ********************* <-   获取和风数据  **************************
 
-    // WeatherNow 实时天气
-    private void getWeatherNow(String cityName){
-        HeWeather.getWeatherNow(MainActivity.this,cityName, new HeWeather.OnResultWeatherNowBeanListener() {
-            @Override
-            public void onError(Throwable e) {
-                Log.i("", "Weather Now onError: ", e);
-            }
 
-            @Override
-            public void onSuccess(Now dataObject) {
-                Log.i("", " Weather Now onSuccess: " + new Gson().toJson(dataObject));
-
-                //先判断返回的status是否正确，当status正确时获取数据，若status不正确，可查看status对应的Code值找到原因
-                if ( Code.OK.getCode().equalsIgnoreCase(dataObject.getStatus()) ){
-                    //此时返回数据
-                    NowBase now = dataObject.getNow();
-                    Basic basic = dataObject.getBasic();
-                    Update update = dataObject.getUpdate();
-
-                    //更新数据时间
-                    now_updateTime.setText(update.getLoc());
-                    // 定位城市
-                    toolbar.setTitle(basic.getLocation());
-
-                    // 获取温度
-                    now_temText.setText(now.getTmp()+ "℃");
-                    now_weather.setText(now.getCond_txt());
-
-                } else {
-                    //在此查看返回数据失败的原因
-                    String status = dataObject.getStatus();
-                    Code code = Code.toEnum(status);
-                    Log.i("TAG", "failed code: " + code);
-                }
-            }
-        });
-    }
-
-    //逐小时预报
-    private void getHourly(String cityName){
-        HeWeather.getWeatherHourly(MainActivity.this, cityName, new HeWeather.OnResultWeatherHourlyBeanListener() {
-            @Override
-            public void onError(Throwable throwable) {
-                Log.i("", "Weather Hourly onError: ", throwable);
-            }
-
-            @Override
-            public void onSuccess(Hourly hourly) {
-                Log.i("", " Weather Hourly onSuccess: " + new Gson().toJson(hourly));
-
-                if(Code.OK.getCode().equalsIgnoreCase(hourly.getStatus())){
-                    List<HourlyBase> hourly1 = hourly.getHourly();
-
-                    forecastLayout.removeAllViews();
-
-                    for (int i = 0; i < 8; i++) {
-                        HourlyBase hourlyBase = hourly1.get(i);
-
-                        View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.forecast_item,forecastLayout,false);
-
-                        TextView dateText = view.findViewById(R.id.forecast_item_date_text);
-                        TextView infoText = view.findViewById(R.id.forecast_item_info_text);
-                        TextView maxText = view.findViewById(R.id.forecast_item_max_text);
-                        TextView minText = view.findViewById(R.id.forecast_item_min_text);
-
-                        dateText.setText(hourlyBase.getTime());
-                        infoText.setText(hourlyBase.getCond_txt());
-                        // 相对湿度
-                        maxText.setText(hourlyBase.getHum());
-                        // 降水概率
-                        minText.setText(hourlyBase.getPop());
-
-                        forecastLayout.addView(view);
-
-                    }
-
-                } else {
-                    //在此查看返回数据失败的原因
-                    String status = hourly.getStatus();
-                    Code code = Code.toEnum(status);
-                    Log.i("TAG", "failed code: " + code);
-                }
-
-            }
-        });
-    }
-
-    //空气质量 AirNow
-    private void getAirNow(String cityName) {
-        HeWeather.getAirNow(MainActivity.this,cityName, new HeWeather.OnResultAirNowBeansListener() {
-            @Override
-            public void onError(Throwable throwable) {
-                Log.i("", "Weather AirNow onError: ", throwable);
-            }
-
-            @Override
-            public void onSuccess(AirNow airNow) {
-                Log.i("", " Weather AirNow onSuccess: " + new Gson().toJson(airNow));
-
-                if(Code.OK.getCode().equalsIgnoreCase(airNow.getStatus())){
-                    AirNowCity air_now_city = airNow.getAir_now_city();
-
-                    aqiText.setText(air_now_city.getAqi());
-                    pm25Text.setText(air_now_city.getPm25());
-                }else {
-                    String status = airNow.getStatus();
-                    Code code = Code.toEnum(status);
-                    Log.i("TAG", "failed code: " + code);
-                }
-            }
-        });
-    }
-
-    // 生活指数 tLifestyle
-    private void getLifestyle(String cityName){
-        HeWeather.getWeatherLifeStyle(MainActivity.this,cityName,new HeWeather.OnResultWeatherLifeStyleBeanListener(){
-
-            @Override
-            public void onError(Throwable throwable) {
-                Log.i("", "Weather Lifestyle onError: ", throwable);
-            }
-
-            @Override
-            public void onSuccess(Lifestyle lifestyle) {
-
-                Log.i("", " Weather LifeStyle onSuccess: " + new Gson().toJson(lifestyle));
-
-                if(Code.OK.getCode().equalsIgnoreCase(lifestyle.getStatus())){
-
-                    // comf舒适度     cw洗车     sport运动
-
-                    // LifestyleBean 逐小时天气	List<Lifestyle>
-
-                    List<LifestyleBase> lifestyle1 = lifestyle.getLifestyle();
-                    LifestyleBase lifestyleBase = lifestyle1.get(0);
-                    Basic basic = lifestyle.getBasic();
-                    //生活指数详细描述
-                    String txt = lifestyleBase.getTxt();
-                    comfortText.setText(txt);
-                    carWashText.setText("经度:"+ basic.getLon());
-                    sportText.setText("纬度:"+ basic.getLat());
-
-
-                }else {
-                    String status = lifestyle.getStatus();
-                    Code code = Code.toEnum(status);
-                    Log.i("TAG", "failed code: " + code);
-                }
-
-            }
-
-        });
-
-    }
 
     //    *** *************** <-   获取和风数据     **************************
 
@@ -332,6 +169,12 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
             // 获取温度
             now_temText.setText(now.getTmp()+ "℃");
             now_weather.setText(now.getCond_txt());
+            // 缓存数据
+            weatherCache.setNow_temText(now.getTmp()+ "℃");
+            weatherCache.setNow_weather(now.getCond_txt());
+            weatherCache.setNow_updateTime(update.getLoc());
+            weatherCache.setToolbar(basic.getLocation());
+            weatherCache.save();
 
         } else {
             //在此查看返回数据失败的原因
@@ -347,9 +190,12 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
         if(Code.OK.getCode().equalsIgnoreCase(bean.getStatus())){
             AirNowCity air_now_city = bean.getAir_now_city();
-
             aqiText.setText(air_now_city.getAqi());
             pm25Text.setText(air_now_city.getPm25());
+            //缓存数据
+            weatherCache.setAqiText(air_now_city.getAqi());
+            weatherCache.setPm25Text(air_now_city.getPm25());
+            weatherCache.save();
         }else {
             String status = bean.getStatus();
             Code code = Code.toEnum(status);
@@ -366,10 +212,9 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
             forecastLayout.removeAllViews();
 
             for (int i = 0; i < 8; i++) {
+                HourlyBaseCache hourlyBaseCache = new HourlyBaseCache();
                 HourlyBase hourlyBase = hourly1.get(i);
-
                 View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.forecast_item,forecastLayout,false);
-
                 TextView dateText = view.findViewById(R.id.forecast_item_date_text);
                 TextView infoText = view.findViewById(R.id.forecast_item_info_text);
                 TextView maxText = view.findViewById(R.id.forecast_item_max_text);
@@ -381,6 +226,12 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
                 maxText.setText(hourlyBase.getHum());
                 // 降水概率
                 minText.setText(hourlyBase.getPop());
+                // 缓存并保存表数据
+                hourlyBaseCache.setDateText(hourlyBase.getTime());
+                hourlyBaseCache.setInfoText(hourlyBase.getCond_txt());
+                hourlyBaseCache.setMaxText(hourlyBase.getHum());
+                hourlyBaseCache.setMinText(hourlyBase.getPop());
+                hourlyBaseCache.save();
 
                 forecastLayout.addView(view);
 
@@ -412,6 +263,11 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
             comfortText.setText(txt);
             carWashText.setText("经度:"+ basic.getLon());
             sportText.setText("纬度:"+ basic.getLat());
+            //缓存数据
+            weatherCache.setComfortText(txt);
+            weatherCache.setCarWashText("经度:"+ basic.getLon());
+            weatherCache.setSportText("纬度:"+ basic.getLat());
+            weatherCache.save();
 
         }else {
             String status = lifestyle.getStatus();
@@ -424,24 +280,70 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     //     *********************    获取和风数据  -> **************************
 
-    public void getHeather(){
-            //（1）初始化用户的key和location
-            HeWeatherConfig.init("e45535cfafe946518d2762ffc980297a");
-            // 账户初始化
-            HeConfig.init("HE1912101541351848", "e45535cfafe946518d2762ffc980297a");
-            //切换到免费服务域名
-            HeConfig.switchToFreeServerNode();
-            // 未来小时天气
-            getHourly(new_CityName);
-            //   实时天气 WeatherNow
-            getWeatherNow(new_CityName);
-            // 空气质量 AirNow
-            getAirNow(new_CityName);
-            // 生活指数 Lifestyle
-            getLifestyle(new_CityName);
+
+    //获取并加载缓存数据
+    private void getCacheAndShowData(){
+        List<WeatherCache> weatherCaches = null;
+        List<HourlyBaseCache>   hourlyBases   = null;
+        // 获取   try 防止获取失败
+        try {
+            weatherCaches = LitePal.findAll(WeatherCache.class);
+            hourlyBases   = LitePal.findAll(HourlyBaseCache.class);
+            Log.i("获取的缓存数据",weatherCaches.toString());
+            Log.i("获取的缓存数据",hourlyBases.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //加载 同样需要捕捉异常
+        try {
+            if(weatherCaches != null && hourlyBases != null){
+
+                WeatherCache weatherCache = weatherCaches.get(0);
+
+                // 将获取的缓存数据显示到界面
+                toolbar.setSubtitle(weatherCache.getToolbar());
+                now_updateTime.setText(weatherCache.getNow_updateTime());
+                now_temText.setText(weatherCache.getNow_temText());
+                now_weather.setText(weatherCache.getNow_weather());
+                aqiText.setText(weatherCache.getAqiText());
+                pm25Text.setText(weatherCache.getPm25Text());
+                comfortText.setText(weatherCache.getComfortText());
+                carWashText.setText(weatherCache.getCarWashText());
+                sportText.setText(weatherCache.getSportText());
+
+                forecastLayout.removeAllViews();
+                for (int i = 0; i < 8; i++) {
+                    HourlyBaseCache hourlyBaseCache = hourlyBases.get(i);
+
+                    View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.forecast_item, forecastLayout, false);
+                    TextView dateText = view.findViewById(R.id.forecast_item_date_text);
+                    TextView infoText = view.findViewById(R.id.forecast_item_info_text);
+                    TextView maxText = view.findViewById(R.id.forecast_item_max_text);
+                    TextView minText = view.findViewById(R.id.forecast_item_min_text);
+
+                    dateText.setText(hourlyBaseCache.getDateText());
+                    infoText.setText(hourlyBaseCache.getInfoText());
+                    maxText.setText(hourlyBaseCache.getMaxText());
+                    minText.setText(hourlyBaseCache.getMinText());
+                    forecastLayout.addView(view);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
+    // 清除数据库的数据
+    private void deleteAllCache(){
+        try {
+            LitePal.deleteAll(WeatherCache.class);
+            LitePal.deleteAll(HourlyBaseCache.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
+    }
 
 
     // 设置标题为空
@@ -450,7 +352,6 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         super.onPostCreate(savedInstanceState);
         toolbar.setTitle("");
     }
-
 
     @Override
     protected void onStart() {
@@ -551,15 +452,6 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
         }
     }
-    // 悬浮按钮点击事件
-    public void floatingButtonClick(View view){
-        Toast.makeText(this,"aaaaa",Toast.LENGTH_SHORT).show();
-    }
-
-
-
-
-
 
     public class  MyLocationListener implements AMapLocationListener {
 
@@ -570,7 +462,11 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
                 if (aMapLocation.getErrorCode() == 0) {
 
-                  new_CityName = aMapLocation.getCity();
+                    //获取当前位置并存储到表
+                    new_CityName = aMapLocation.getCity();
+                    NowCityName nowCityName = new NowCityName();
+                    nowCityName.setCityName(new_CityName);
+                    nowCityName.save();
 
                 } else {
                     // 动态申请定位权限 和存储卡权限，用于缓存数据

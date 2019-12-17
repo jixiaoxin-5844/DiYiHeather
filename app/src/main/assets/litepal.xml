@@ -1,10 +1,14 @@
 <litepal>
 
-    <dbname value="Diyi_weather"/>
+    <dbname value="Diyi_weather_Cache"/>
 
     <version value="1"/>
 
     <list>
+
+        <mapping class="com.example.test4.bean.sqliteBean.HourlyBaseCache"/>
+        <mapping class="com.example.test4.bean.sqliteBean.WeatherCache"/>
+        <mapping class="com.example.test4.bean.sqliteBean.NowCityName"/>
 
     </list>
 
