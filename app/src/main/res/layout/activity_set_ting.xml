@@ -15,4 +15,13 @@
          android:layout_height="?attr/actionBarSize"
          app:subtitle="设置"/>
 
+    <Switch
+        android:id="@+id/setTing_switch1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:checked="true"
+        android:text="使用定位城市" />
+
+
 </LinearLayout>

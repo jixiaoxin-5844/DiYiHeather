@@ -18,15 +18,7 @@ android {
         }
     }
 
-    sourceSets {
-        main {
-            res.srcDirs = [
-                    'src/main/res/layout/weatherLayout',
-                    'src/main/res/layout',
-                    'src/main/res'
-            ]
-        }
-    }
+
 
 }
 

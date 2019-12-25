@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -30,11 +31,9 @@ import com.amap.api.location.AMapLocationListener;
 import com.example.test4.MVPActivity.for_Activity.test_CityPicker_Activity;
 import com.example.test4.MVPActivity.setTingActivity;
 import com.example.test4.bean.sqliteBean.HourlyBaseCache;
-import com.example.test4.bean.sqliteBean.NowCityName;
 import com.example.test4.bean.sqliteBean.WeatherCache;
 import com.example.test4.presenter.WeatherImpl;
 import com.example.test4.presenter.WeatherInterface;
-import com.google.gson.Gson;
 import com.heweather.plugin.view.HeWeatherConfig;
 
 import org.litepal.LitePal;
@@ -53,7 +52,6 @@ import interfaces.heweather.com.interfacesmodule.bean.weather.lifestyle.Lifestyl
 import interfaces.heweather.com.interfacesmodule.bean.weather.now.Now;
 import interfaces.heweather.com.interfacesmodule.bean.weather.now.NowBase;
 import interfaces.heweather.com.interfacesmodule.view.HeConfig;
-import interfaces.heweather.com.interfacesmodule.view.HeWeather;
 
 public class MainActivity extends AppCompatActivity implements WeatherInterface {
 
@@ -75,9 +73,12 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
     //选择页面传回来的城市名
     String choose_cityName;
     // 定位城市
-    public String new_CityName = "北京";
+    public String locaTion_CityName ;
     //当前选择城市
     String now_CityName;
+
+    //  缓存 使用与设置页面同一个文件来缓存
+    private final String SetTing_SharedPreferencesName = "DiYi_My_SetTing" ;
 
     // 声名数据库的 天气实时信息 JavaBean 类
     WeatherCache weatherCache = new WeatherCache();
@@ -96,15 +97,17 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         //加载并显示缓存数据
         getCacheAndShowData();
 
+        // 获取缓存的定位城市信息
+
 
         //   swipeRefreshLayout 下拉刷新事件 (获取最新天气)
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                //删除数据
-                deleteAllCache();
+                //删除天气信息数据
+               // deleteAllCache();
                 // 更新数据
-                initData(new_CityName);
+                initData(judgeUseWay());
                 // 设置它的停止
                 swipeRefreshLayout.setRefreshing(false);
 
@@ -113,10 +116,36 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     }
 
+    // 判断使用定位城市，还是选择城市 （默认定位城市）
+    private String judgeUseWay(){
+
+        int ic = 0 ;
+
+        SharedPreferences pre = getSharedPreferences(SetTing_SharedPreferencesName,MODE_PRIVATE);
+
+        ic =  pre.getInt("if_Choose_City",0);  // 获取到 是1或者余数是1 那就是使用选择的城市
+        if( ic %2 == 1){
+
+            now_CityName = pre.getString("chooseCity","北京市");
+
+        }else {
+            now_CityName = pre.getString("locationCity","北京市");
+        }
+
+        return now_CityName;
+
+    }
+
+    // 获取缓存的定位城市信息
+    private String findCacheCity(){
+        SharedPreferences pre = getSharedPreferences(SetTing_SharedPreferencesName,MODE_PRIVATE);
+
+        return ( pre.getString("locationCity","北京市"));  //查不到时使用北京市
+    }
+
     public void initLocation(){
         //初始化定位
         mLocationClient = new AMapLocationClient(getApplicationContext());
-
         // 声明AMapLocationClientOption对象 并初始化
         AMapLocationClientOption mLocationOption = new AMapLocationClientOption();
         //获取一次定位结果： 该方法默认为false。
@@ -125,14 +154,28 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         mLocationClient.setLocationOption(mLocationOption);
         // 设置监听
         mLocationClient.setLocationListener(new MyLocationListener());
-
         //启动定位
         mLocationClient.startLocation();
-
     }
+
+    // 判断时使用定位天气还是自己选择的城市的天气
+    public String choose_CityName(){
+
+      /*  if(choose_cityName == null){
+            now_CityName = locaTion_CityName;
+        }else {
+            now_CityName = choose_cityName;
+        }*/
+
+
+        return now_CityName;
+    }
+
 
     // 获取数据
     private void initData(String cityName){
+        //删除天气信息数据
+        deleteAllCache();
         // 和风初始化
         HeWeatherConfig.init("e45535cfafe946518d2762ffc980297a");
         // 账户初始化
@@ -145,11 +188,6 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         weather.getWeatherNow(cityName);
         weather.getWeatherHourly(cityName);
     }
-
-    //     ********************* <-   获取和风数据  **************************
-
-
-
     //    *** *************** <-   获取和风数据     **************************
 
     @Override
@@ -160,12 +198,10 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
             NowBase now = bean.getNow();
             Basic basic = bean.getBasic();
             Update update = bean.getUpdate();
-
             //更新数据时间
             now_updateTime.setText(update.getLoc());
             // 定位城市
             toolbar.setSubtitle(basic.getLocation());
-
             // 获取温度
             now_temText.setText(now.getTmp()+ "℃");
             now_weather.setText(now.getCond_txt());
@@ -205,10 +241,8 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     @Override
     public void getWeatherHourly(Hourly bean) {
-
         if(Code.OK.getCode().equalsIgnoreCase(bean.getStatus())){
             List<HourlyBase> hourly1 = bean.getHourly();
-
             forecastLayout.removeAllViews();
 
             for (int i = 0; i < 8; i++) {
@@ -234,7 +268,6 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
                 hourlyBaseCache.save();
 
                 forecastLayout.addView(view);
-
             }
 
         } else {
@@ -248,13 +281,9 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     @Override
     public void getLifestyle(Lifestyle lifestyle) {
-
         if(Code.OK.getCode().equalsIgnoreCase(lifestyle.getStatus())){
 
-            // comf舒适度     cw洗车     sport运动
-
             // LifestyleBean 逐小时天气	List<Lifestyle>
-
             List<LifestyleBase> lifestyle1 = lifestyle.getLifestyle();
             LifestyleBase lifestyleBase = lifestyle1.get(0);
             Basic basic = lifestyle.getBasic();
@@ -296,7 +325,7 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         }
         //加载 同样需要捕捉异常
         try {
-            if(weatherCaches != null && hourlyBases != null){
+            if(weatherCaches != null || hourlyBases != null){
 
                 WeatherCache weatherCache = weatherCaches.get(0);
 
@@ -345,7 +374,6 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     }
 
-
     // 设置标题为空
     @Override
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
@@ -373,7 +401,6 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
         toolbar = findViewById(R.id.main_toolbar);
         swipeRefreshLayout = findViewById(R.id.main_swipe_refresh);
-       // llView = findViewById(R.id.main_ll_view); //左侧大布局右侧双布局控件
         // 天气控件初始化
         now_temText = findViewById(R.id.now_tem);                //当前气温
         now_weather = findViewById(R.id.now_weather);            // 当前天气等级
@@ -425,8 +452,19 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
             // 获取传回来的城市名
             //防止没有选择城市
             try {
+              //  deleteAllCityNameCache();
+
+                // 缓存选择城市
+                SharedPreferences.Editor editor = getSharedPreferences(SetTing_SharedPreferencesName,MODE_PRIVATE).edit();
+                editor.putString("chooseCity",data.getStringExtra("choose_city"));
+                editor.apply();
+
                 choose_cityName = data.getStringExtra("choose_city");
-                Toast.makeText(MainActivity.this,"选择的城市："+choose_cityName+"aaaaaaaa",Toast.LENGTH_SHORT).show();
+
+            //    initCityName(choose_cityName);
+
+                Toast.makeText(MainActivity.this,"切换至选择的城市："+ choose_cityName,Toast.LENGTH_SHORT).show();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -462,11 +500,13 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
                 if (aMapLocation.getErrorCode() == 0) {
 
-                    //获取当前位置并存储到表
-                    new_CityName = aMapLocation.getCity();
-                    NowCityName nowCityName = new NowCityName();
-                    nowCityName.setCityName(new_CityName);
-                    nowCityName.save();
+                    //获取当前位置
+                    locaTion_CityName = aMapLocation.getCity();
+
+                    // 缓存定位城市
+                    SharedPreferences.Editor editor = getSharedPreferences(SetTing_SharedPreferencesName,MODE_PRIVATE).edit();
+                    editor.putString("locationCity",aMapLocation.getCity());
+                    editor.apply();
 
                 } else {
                     // 动态申请定位权限 和存储卡权限，用于缓存数据
