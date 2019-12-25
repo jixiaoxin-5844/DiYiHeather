@@ -18,15 +18,7 @@ android {
         }
     }
 
-    sourceSets {
-        main {
-            res.srcDirs = [
-                    'src/main/res/layout/weatherLayout',
-                    'src/main/res/layout',
-                    'src/main/res'
-            ]
-        }
-    }
+
 
 }
 
@@ -43,8 +35,9 @@ dependencies {
     implementation 'com.google.android.material:material:1.1.0-alpha10'
     implementation 'com.baoyz.pullrefreshlayout:library:1.2.0'
     implementation files('libs/HeWeather_Plugin_SDK_Android_V1.2.jar')
-    implementation files('libs/Android_Map3D_SDK_V7.1.0_20191030.jar')
-    implementation files('libs/AMap_Search_V7.1.0_20191030.jar')
+
     implementation files('libs/AMap_Location_V4.7.2_20190927.jar')
     implementation 'org.litepal.android:java:3.0.0'
+
+    implementation 'com.zaaach:citypicker:2.0.3'    //必选
 }
