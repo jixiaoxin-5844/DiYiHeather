@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.ArraySet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -31,14 +32,22 @@ import com.amap.api.location.AMapLocationListener;
 import com.example.test4.MVPActivity.for_Activity.test_CityPicker_Activity;
 import com.example.test4.MVPActivity.setTingActivity;
 import com.example.test4.bean.sqliteBean.HourlyBaseCache;
+import com.example.test4.bean.sqliteBean.HourlyCache_dd;
 import com.example.test4.bean.sqliteBean.WeatherCache;
 import com.example.test4.presenter.WeatherImpl;
 import com.example.test4.presenter.WeatherInterface;
+import com.google.gson.Gson;
 import com.heweather.plugin.view.HeWeatherConfig;
 
 import org.litepal.LitePal;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import interfaces.heweather.com.interfacesmodule.bean.Code;
 import interfaces.heweather.com.interfacesmodule.bean.air.now.AirNow;
@@ -59,9 +68,7 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     private TextView now_temText,now_weather,now_updateTime;
     private LinearLayout forecastLayout;
-
     private TextView aqiText,pm25Text,comfortText,carWashText,sportText;
-    private ImageView bingPicImg;
 
     Toolbar toolbar;   // 标题栏
     //下拉刷新
@@ -69,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     public AMapLocationClient mLocationClient = null;
 
-    // 关于城市名
+    //  *********** 关于城市名
     //选择页面传回来的城市名
     String choose_cityName;
     // 定位城市
@@ -77,8 +84,10 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
     //当前选择城市
     String now_CityName;
 
-    //  缓存 使用与设置页面同一个文件来缓存
+    //  城市信息的缓存 使用与设置页面同一个文件来缓存
     private final String SetTing_SharedPreferencesName = "DiYi_My_SetTing" ;
+    //天气信息的缓存
+    private final String Weather_CaChe = "DiYi_My_Weather";
 
     // 声名数据库的 天气实时信息 JavaBean 类
     WeatherCache weatherCache = new WeatherCache();
@@ -95,22 +104,22 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         //获取定位
         initLocation();
         //加载并显示缓存数据
-        getCacheAndShowData();
 
-        // 获取缓存的定位城市信息
-
+        try {
+            getCacheAndShowData();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         //   swipeRefreshLayout 下拉刷新事件 (获取最新天气)
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                //删除天气信息数据
-               // deleteAllCache();
+
                 // 更新数据
                 initData(judgeUseWay());
                 // 设置它的停止
                 swipeRefreshLayout.setRefreshing(false);
-
             }
         });
 
@@ -118,29 +127,17 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     // 判断使用定位城市，还是选择城市 （默认定位城市）
     private String judgeUseWay(){
-
         int ic = 0 ;
-
         SharedPreferences pre = getSharedPreferences(SetTing_SharedPreferencesName,MODE_PRIVATE);
 
         ic =  pre.getInt("if_Choose_City",0);  // 获取到 是1或者余数是1 那就是使用选择的城市
         if( ic %2 == 1){
-
             now_CityName = pre.getString("chooseCity","北京市");
-
         }else {
             now_CityName = pre.getString("locationCity","北京市");
         }
-
         return now_CityName;
 
-    }
-
-    // 获取缓存的定位城市信息
-    private String findCacheCity(){
-        SharedPreferences pre = getSharedPreferences(SetTing_SharedPreferencesName,MODE_PRIVATE);
-
-        return ( pre.getString("locationCity","北京市"));  //查不到时使用北京市
     }
 
     public void initLocation(){
@@ -158,24 +155,8 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         mLocationClient.startLocation();
     }
 
-    // 判断时使用定位天气还是自己选择的城市的天气
-    public String choose_CityName(){
-
-      /*  if(choose_cityName == null){
-            now_CityName = locaTion_CityName;
-        }else {
-            now_CityName = choose_cityName;
-        }*/
-
-
-        return now_CityName;
-    }
-
-
     // 获取数据
     private void initData(String cityName){
-        //删除天气信息数据
-        deleteAllCache();
         // 和风初始化
         HeWeatherConfig.init("e45535cfafe946518d2762ffc980297a");
         // 账户初始化
@@ -205,12 +186,15 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
             // 获取温度
             now_temText.setText(now.getTmp()+ "℃");
             now_weather.setText(now.getCond_txt());
-            // 缓存数据
-            weatherCache.setNow_temText(now.getTmp()+ "℃");
-            weatherCache.setNow_weather(now.getCond_txt());
-            weatherCache.setNow_updateTime(update.getLoc());
-            weatherCache.setToolbar(basic.getLocation());
-            weatherCache.save();
+
+            // *************************
+            SharedPreferences.Editor editor = getSharedPreferences(Weather_CaChe,MODE_PRIVATE).edit();
+            editor.putString("temText",now.getTmp()+ "℃");
+            editor.putString("weather",now.getCond_txt());
+            editor.putString("updateTime",update.getLoc());
+            editor.putString("Toolbar",basic.getLocation());
+
+            editor.apply();
 
         } else {
             //在此查看返回数据失败的原因
@@ -228,10 +212,14 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
             AirNowCity air_now_city = bean.getAir_now_city();
             aqiText.setText(air_now_city.getAqi());
             pm25Text.setText(air_now_city.getPm25());
+
             //缓存数据
-            weatherCache.setAqiText(air_now_city.getAqi());
-            weatherCache.setPm25Text(air_now_city.getPm25());
-            weatherCache.save();
+            SharedPreferences.Editor editor = getSharedPreferences(Weather_CaChe,MODE_PRIVATE).edit();
+            editor.putString("AqiText",air_now_city.getAqi());
+            editor.putString("Pm25Text",air_now_city.getPm25());
+
+            editor.apply();
+
         }else {
             String status = bean.getStatus();
             Code code = Code.toEnum(status);
@@ -244,6 +232,8 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         if(Code.OK.getCode().equalsIgnoreCase(bean.getStatus())){
             List<HourlyBase> hourly1 = bean.getHourly();
             forecastLayout.removeAllViews();
+
+            SharedPreferences.Editor editor = getSharedPreferences(Weather_CaChe,MODE_PRIVATE).edit();
 
             for (int i = 0; i < 8; i++) {
                 HourlyBaseCache hourlyBaseCache = new HourlyBaseCache();
@@ -260,12 +250,22 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
                 maxText.setText(hourlyBase.getHum());
                 // 降水概率
                 minText.setText(hourlyBase.getPop());
+
                 // 缓存并保存表数据
-                hourlyBaseCache.setDateText(hourlyBase.getTime());
-                hourlyBaseCache.setInfoText(hourlyBase.getCond_txt());
-                hourlyBaseCache.setMaxText(hourlyBase.getHum());
-                hourlyBaseCache.setMinText(hourlyBase.getPop());
-                hourlyBaseCache.save();
+                Gson gson = new Gson();
+                HourlyCache_dd   ddd = new HourlyCache_dd();
+
+                ddd.setDateText(hourlyBase.getTime());
+                ddd.setInfoText(hourlyBase.getCond_txt());
+                ddd.setMaxText(hourlyBase.getHum());
+                ddd.setMinText(hourlyBase.getPop());
+
+                String s = gson.toJson(ddd);
+                editor.putString("Hourly"+i,s);
+
+
+
+                editor.apply();
 
                 forecastLayout.addView(view);
             }
@@ -292,11 +292,15 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
             comfortText.setText(txt);
             carWashText.setText("经度:"+ basic.getLon());
             sportText.setText("纬度:"+ basic.getLat());
+
             //缓存数据
-            weatherCache.setComfortText(txt);
-            weatherCache.setCarWashText("经度:"+ basic.getLon());
-            weatherCache.setSportText("纬度:"+ basic.getLat());
-            weatherCache.save();
+            SharedPreferences.Editor editor = getSharedPreferences(Weather_CaChe,MODE_PRIVATE).edit();
+
+            editor.putString("ComfortText",txt);
+            editor.putString("CarWashText","经度:"+ basic.getLon());
+            editor.putString("SportText","纬度:"+ basic.getLat());
+
+            editor.apply();
 
         }else {
             String status = lifestyle.getStatus();
@@ -309,70 +313,53 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
     //     *********************    获取和风数据  -> **************************
 
-
-    //获取并加载缓存数据
+    //获取缓存的数据并显示
     private void getCacheAndShowData(){
-        List<WeatherCache> weatherCaches = null;
-        List<HourlyBaseCache>   hourlyBases   = null;
-        // 获取   try 防止获取失败
-        try {
-            weatherCaches = LitePal.findAll(WeatherCache.class);
-            hourlyBases   = LitePal.findAll(HourlyBaseCache.class);
-            Log.i("获取的缓存数据",weatherCaches.toString());
-            Log.i("获取的缓存数据",hourlyBases.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        //加载 同样需要捕捉异常
-        try {
-            if(weatherCaches != null || hourlyBases != null){
 
-                WeatherCache weatherCache = weatherCaches.get(0);
+        SharedPreferences pre = getSharedPreferences(Weather_CaChe,MODE_PRIVATE);
 
-                // 将获取的缓存数据显示到界面
-                toolbar.setSubtitle(weatherCache.getToolbar());
-                now_updateTime.setText(weatherCache.getNow_updateTime());
-                now_temText.setText(weatherCache.getNow_temText());
-                now_weather.setText(weatherCache.getNow_weather());
-                aqiText.setText(weatherCache.getAqiText());
-                pm25Text.setText(weatherCache.getPm25Text());
-                comfortText.setText(weatherCache.getComfortText());
-                carWashText.setText(weatherCache.getCarWashText());
-                sportText.setText(weatherCache.getSportText());
+        // 将获取的缓存数据显示到界面
+        toolbar.setSubtitle(pre.getString("Toolbar", ""));
+        now_updateTime.setText(pre.getString("updateTime", ""));
+        now_temText.setText(pre.getString("temText", ""));
+        now_weather.setText(pre.getString("weather", ""));
+        aqiText.setText(pre.getString("AqiText", ""));
+        pm25Text.setText(pre.getString("Pm25Text", ""));
+        comfortText.setText(pre.getString("ComfortText", ""));
+        carWashText.setText(pre.getString("CarWashText", ""));
+        sportText.setText(pre.getString("SportText", ""));
 
-                forecastLayout.removeAllViews();
-                for (int i = 0; i < 8; i++) {
-                    HourlyBaseCache hourlyBaseCache = hourlyBases.get(i);
+        forecastLayout.removeAllViews();
+        for (int i = 0; i <8 ; i++) {
 
-                    View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.forecast_item, forecastLayout, false);
-                    TextView dateText = view.findViewById(R.id.forecast_item_date_text);
-                    TextView infoText = view.findViewById(R.id.forecast_item_info_text);
-                    TextView maxText = view.findViewById(R.id.forecast_item_max_text);
-                    TextView minText = view.findViewById(R.id.forecast_item_min_text);
+            View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.forecast_item, forecastLayout, false);
+            TextView dateText = view.findViewById(R.id.forecast_item_date_text);
+            TextView infoText = view.findViewById(R.id.forecast_item_info_text);
+            TextView maxText = view.findViewById(R.id.forecast_item_max_text);
+            TextView minText = view.findViewById(R.id.forecast_item_min_text);
 
-                    dateText.setText(hourlyBaseCache.getDateText());
-                    infoText.setText(hourlyBaseCache.getInfoText());
-                    maxText.setText(hourlyBaseCache.getMaxText());
-                    minText.setText(hourlyBaseCache.getMinText());
-                    forecastLayout.addView(view);
-                }
+            // 获取到了 json格式字符串
+            String json = pre.getString("Hourly" + i, "");
+
+            Gson gson = new Gson();
+            // 解析
+            try {
+                HourlyCache_dd hourlyCache_dd = gson.fromJson(json, HourlyCache_dd.class);
+
+                dateText.setText(hourlyCache_dd.getDateText());
+                infoText.setText(hourlyCache_dd.getInfoText());
+                maxText.setText(hourlyCache_dd.getMaxText());
+                minText.setText(hourlyCache_dd.getMinText());
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            forecastLayout.addView(view);
+
         }
 
     }
 
-    // 清除数据库的数据
-    private void deleteAllCache(){
-        try {
-            LitePal.deleteAll(WeatherCache.class);
-            LitePal.deleteAll(HourlyBaseCache.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
 
     // 设置标题为空
     @Override
