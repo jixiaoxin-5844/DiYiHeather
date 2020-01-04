@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--整体使用滑动布局-->
 <LinearLayout
+    android:id="@+id/main_linearLayout"
     android:orientation="vertical"
     android:background="@drawable/back_101d"
     xmlns:android="http://schemas.android.com/apk/res/android"

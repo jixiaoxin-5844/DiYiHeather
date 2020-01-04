@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
     // View 组件创建
 
     private TextView now_temText,now_weather,now_updateTime;
-    private LinearLayout forecastLayout;
+    private LinearLayout forecastLayout,main_linearLayout;
     private TextView aqiText,pm25Text,comfortText,carWashText,sportText;
 
     Toolbar toolbar;   // 标题栏
@@ -103,10 +103,13 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         setSupportActionBar(toolbar);
         //获取定位
         initLocation();
-        //加载并显示缓存数据
+
 
         try {
+            //加载缓存
             getCacheAndShowData();
+            //更换背景
+            changeBackgrouond();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -139,6 +142,63 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         return now_CityName;
 
     }
+
+    //根据天气更换背景
+    private void changeBackgrouond(){
+
+        //从缓存里获取当前天气状况
+        SharedPreferences pre = getSharedPreferences(Weather_CaChe,MODE_PRIVATE);
+        //当前天气状况
+        String weatherNow = pre.getString("weather", "");
+        //当前更新天气时间 "updateTime"
+        String updateTime = pre.getString("updateTime", "");
+        //获取当前小时
+        String substring = updateTime.substring(11, 13);
+        // Toast.makeText(this,"现在的获取天气时间"+substring,Toast.LENGTH_SHORT).show();
+        Integer time = new Integer(substring);
+        // 早上六点到晚上六点是白天
+
+        if( time>6  && time < 18) {
+
+            switch (weatherNow) {
+                case "晴":
+                    main_linearLayout.setBackgroundResource(R.drawable.bj_qing);
+                    break;
+                case "阴":
+                    main_linearLayout.setBackgroundResource(R.drawable.bj_yin);
+                    break;
+                case "多云":
+                    main_linearLayout.setBackgroundResource(R.drawable.bj_duoyun);
+                    break;
+                case "小雨":
+                    main_linearLayout.setBackgroundResource(R.drawable.bj_xiaoyu);
+
+                default:
+                    break;
+            }
+        }else {
+            switch (weatherNow) {
+                case "晴":
+                    main_linearLayout.setBackgroundResource(R.drawable.bj_qing_n);
+                    break;
+                case "阴":
+                    main_linearLayout.setBackgroundResource(R.drawable.bj_yin);
+                    break;
+                case "多云":
+                    main_linearLayout.setBackgroundResource(R.drawable.bj_duoyun_n);
+                    break;
+                case "小雨":
+                    main_linearLayout.setBackgroundResource(R.drawable.bj_xiaoyu_n);
+
+
+                default:
+                    break;
+            }
+
+        }
+
+    }
+
 
     public void initLocation(){
         //初始化定位
@@ -210,12 +270,30 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
 
         if(Code.OK.getCode().equalsIgnoreCase(bean.getStatus())){
             AirNowCity air_now_city = bean.getAir_now_city();
-            aqiText.setText(air_now_city.getAqi());
+
+            Integer aqi = new Integer(air_now_city.getAqi());
+            String str ;
+
+            if(aqi <= 50){
+                str = "(优)"+ aqi;
+            }else if(aqi <= 100){
+                str = "(良)"+ aqi;
+            }else if(aqi <= 150){
+                str = "(轻度污染)"+ aqi;
+            }else if(aqi <= 200){
+                str = "(中度污染)"+ aqi;
+            }else if(aqi <= 250){
+                str = "(重度污染)"+ aqi;
+            }else {
+                str = "(严重污染)"+ aqi;
+            }
+
+            aqiText.setText(str);
             pm25Text.setText(air_now_city.getPm25());
 
             //缓存数据
             SharedPreferences.Editor editor = getSharedPreferences(Weather_CaChe,MODE_PRIVATE).edit();
-            editor.putString("AqiText",air_now_city.getAqi());
+            editor.putString("AqiText",str);
             editor.putString("Pm25Text",air_now_city.getPm25());
 
             editor.apply();
@@ -401,6 +479,7 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
         comfortText = findViewById(R.id.comfort_text);
         carWashText = findViewById(R.id.car_wash_text);
         sportText = findViewById(R.id.sport_text);
+        main_linearLayout = findViewById(R.id.main_linearLayout);
 
     }
 
@@ -439,7 +518,6 @@ public class MainActivity extends AppCompatActivity implements WeatherInterface 
             // 获取传回来的城市名
             //防止没有选择城市
             try {
-              //  deleteAllCityNameCache();
 
                 // 缓存选择城市
                 SharedPreferences.Editor editor = getSharedPreferences(SetTing_SharedPreferencesName,MODE_PRIVATE).edit();
